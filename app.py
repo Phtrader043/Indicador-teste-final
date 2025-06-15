@@ -1,58 +1,101 @@
 import streamlit as st
-import time
 from signal_engine import gerar_sinal
-from utils import exibir_historico, salvar_historico
-from audio_alert import alerta_sonoro
+from utils import exibir_historico, tocar_alerta
+import time
+import pytz
+from datetime import datetime
 
-# Configuração da página
+
+# =========================
+# 🎨 Configuração da Página
+# =========================
 st.set_page_config(
     page_title="Indicador GPT 1.0 - Equipe PHTrader",
     layout="wide",
-    page_icon="💹"
+    page_icon="📊"
 )
 
-st.title("💹 Indicador GPT 1.0 - Equipe PHTrader")
-st.subheader("Análise Cripto & Forex em Tempo Real com IA + Indicadores")
-st.markdown("---")
 
-# Sidebar
-st.sidebar.title("Configurações de Análise")
+# =========================
+# 🌎 Horário de Brasília
+# =========================
+fuso_brasilia = pytz.timezone('America/Sao_Paulo')
+agora = datetime.now(fuso_brasilia).strftime("%d/%m/%Y %H:%M:%S")
 
-modo = st.sidebar.radio(
-    "Escolha o modo de operação:",
-    ('Conservador', 'Agressivo')
+
+# =========================
+# 🎯 Sidebar de Configuração
+# =========================
+st.sidebar.title("⚙️ Configurações")
+
+modo = st.sidebar.selectbox(
+    "🎯 Escolha o Modo:",
+    ["Conservador", "Agressivo"],
+    key="modo_operacao"
 )
 
-ativar_ia = st.sidebar.toggle("🚀 Ativar IA")
+ativar_ia = st.sidebar.toggle(
+    "🚀 Ativar IA",
+    value=False,
+    key="toggle_ia"
+)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("🔔 Histórico de Sinais")
-exibir_historico()
+st.sidebar.caption(f"🕒 Horário de Brasília: {agora}")
 
+
+# =========================
+# 🏠 Título Principal
+# =========================
+st.title("📈 Indicador GPT 1.0 - Equipe PHTrader")
+st.subheader("🔍 Monitoramento de Cripto & Forex com IA e Análise Técnica")
 st.markdown("---")
-st.subheader("🧠 Monitoramento em Tempo Real")
 
+
+# =========================
+# 🖥️ Área Principal
+# =========================
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("📢 Últimos Sinais")
+    exibir_historico()
+
+with col2:
+    st.subheader("🚦 Status do Robô")
+    if ativar_ia:
+        st.success("🟢 IA ATIVADA - Gerando sinais automaticamente")
+    else:
+        st.warning("🛑 IA DESATIVADA")
+
+
+# =========================
+# 🔄 Loop de geração de sinais
+# =========================
 if ativar_ia:
-    status = st.empty()
+    placeholder = st.empty()
+
     while ativar_ia:
-        status.info("🔍 Buscando novos sinais...")
+        with placeholder.container():
+            sinal = gerar_sinal(modo)
 
-        sinal = gerar_sinal(modo)
+            if sinal:
+                st.success(
+                    f"✅ Novo sinal detectado: {sinal['Ativo']} | "
+                    f"{sinal['Tipo']} | "
+                    f"Entrada: {sinal['Entrada']} | "
+                    f"Saída: {sinal['Saída']} | "
+                    f"Tendência: {sinal['Tendência']}"
+                )
 
-        if sinal:
-            st.success(f"""### ✅ Novo Sinal Detectado:
-- **Ativo:** {sinal['ativo']}
-- **Tipo:** {sinal['tipo']}
-- **Entrada:** {sinal['entrada']}
-- **Saída:** {sinal['saida']}
-- **Tendência:** {sinal['tendencia']}
-""")
-            alerta_sonoro(sinal['ativo'])
-            salvar_historico(sinal)
-        else:
-            st.warning("🚫 Nenhum sinal identificado no momento.")
+                # 🔊 Emitir alerta sonoro
+                tocar_alerta(sinal['Ativo'])
 
-        time.sleep(60)
-        ativar_ia = st.sidebar.toggle("🚀 Ativar IA", value=True)
+                st.balloons()
+
+            else:
+                st.info("🔍 Nenhum sinal identificado no momento.")
+
+            time.sleep(120)  # Espera 2 minutos antes de gerar o próximo sinal
 else:
-    st.info("🟢 IA Desativada. Ative para começar a gerar sinais.")
+    st.info("🔽 Ative a IA no menu lateral para iniciar a geração de sinais.")
