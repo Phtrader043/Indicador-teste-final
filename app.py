@@ -31,13 +31,13 @@ st.sidebar.title("⚙️ Configurações")
 modo = st.sidebar.selectbox(
     "🎯 Escolha o Modo:",
     ["Conservador", "Agressivo"],
-    key="modo_operacao"
+    key="select_modo"
 )
 
 ativar_ia = st.sidebar.toggle(
     "🚀 Ativar IA",
     value=False,
-    key="toggle_ia"
+    key="toggle_ativar_ia"
 )
 
 st.sidebar.markdown("---")
@@ -75,7 +75,7 @@ with col2:
 if ativar_ia:
     placeholder = st.empty()
 
-    while ativar_ia:
+    while True:
         with placeholder.container():
             sinal = gerar_sinal(modo)
 
@@ -97,5 +97,11 @@ if ativar_ia:
                 st.info("🔍 Nenhum sinal identificado no momento.")
 
             time.sleep(120)  # Espera 2 minutos antes de gerar o próximo sinal
+
+            # Verificar se o usuário desligou a IA
+            ativar_ia = st.session_state.get("toggle_ativar_ia", False)
+            if not ativar_ia:
+                st.warning("🛑 IA DESATIVADA")
+                break
 else:
     st.info("🔽 Ative a IA no menu lateral para iniciar a geração de sinais.")
